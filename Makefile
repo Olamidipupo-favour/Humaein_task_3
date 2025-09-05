@@ -20,7 +20,7 @@ up:
 	@echo "Starting RCM GCC Platform..."
 	docker-compose -f infra/docker-compose.yml up --build -d
 	@echo "Services started! Access at:"
-	@echo "  Frontend: http://localhost:3000"
+	@echo "  Frontend: http://localhost:3001"
 	@echo "  API: http://localhost:8000"
 	@echo "  Database: localhost:5432"
 
@@ -78,6 +78,6 @@ health:
 	@echo "API Health:"
 	curl -f http://localhost:8000/health || echo "API not responding"
 	@echo "Frontend Health:"
-	curl -f http://localhost:3000 || echo "Frontend not responding"
+	curl -f http://localhost:3001 || echo "Frontend not responding"
 	@echo "Database Health:"
 	docker-compose -f infra/docker-compose.yml exec db pg_isready -U postgres || echo "Database not responding"

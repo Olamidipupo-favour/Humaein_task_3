@@ -16,7 +16,7 @@ make up
 make seed
 
 # Access the application
-# Frontend: http://localhost:3000
+# Frontend: http://localhost:3001
 # API: http://localhost:8000
 ```
 

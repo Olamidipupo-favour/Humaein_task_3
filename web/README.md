@@ -49,7 +49,7 @@ Modern, responsive web application for AI-native Revenue Cycle Management in GCC
    ```
 
 4. **Access the application:**
-   - Open http://localhost:3000
+   - Open http://localhost:3001
    - Use demo credentials: admin@demo.com / admin123
 
 ### Production Build
@@ -209,7 +209,7 @@ yarn test:e2e
 docker build -t rcm-gcc-web .
 
 # Run container
-docker run -p 3000:3000 rcm-gcc-web
+docker run -p 3001:3001 rcm-gcc-web
 ```
 
 ### Environment Variables

@@ -80,7 +80,7 @@ Claim Data → AI Scrubbing → Issue Detection → Recommendations → Submissi
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   API Layer     │    │   Database      │
 │   (Next.js)     │◄──►│   (Flask)       │◄──►│   (PostgreSQL)  │
-│   Port: 3000    │    │   Port: 8000    │    │   Port: 5432    │
+│   Port: 3001    │    │   Port: 8000    │    │   Port: 5432    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          │                       │                       │

@@ -91,14 +91,15 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex items-start space-x-4"
               >
+                <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                   <feature.icon className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">{feature.title}</h3>
                   <p className="text-blue-100 text-sm">{feature.description}</p>
+                </div>
                 </div>
               </motion.div>
             ))}
@@ -112,8 +113,8 @@ export default function HomePage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
         >
+          <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Welcome Back
@@ -186,6 +187,7 @@ export default function HomePage() {
             <p className="text-sm text-gray-500">
               Built for Humaein • Contact: contact@humaein.com
             </p>
+          </div>
           </div>
         </motion.div>
       </div>

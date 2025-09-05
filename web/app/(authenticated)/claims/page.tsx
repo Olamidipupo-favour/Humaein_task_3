@@ -108,8 +108,8 @@ export default function ClaimsPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             {activeTab === 'scrub' && 'Claims Scrubbing'}
             {activeTab === 'submit' && 'Submit Claim'}
@@ -259,6 +259,7 @@ export default function ClaimsPage() {
               </button>
             </form>
           )}
+          </div>
         </motion.div>
 
         {/* Results */}
@@ -266,8 +267,8 @@ export default function ClaimsPage() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Results</h3>
           
           {!result ? (
@@ -357,6 +358,7 @@ export default function ClaimsPage() {
               </div>
             </div>
           )}
+          </div>
         </motion.div>
       </div>
     </div>

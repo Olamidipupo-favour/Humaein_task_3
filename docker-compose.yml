@@ -56,6 +56,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
       - DEMO_LOGIN=true
+      - PORT=3001
     ports:
       - "3001:3001"
     depends_on:

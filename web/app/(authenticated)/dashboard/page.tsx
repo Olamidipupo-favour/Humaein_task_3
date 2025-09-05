@@ -150,8 +150,8 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="card"
           >
+            <div className="card">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{card.title}</p>
@@ -174,6 +174,7 @@ export default function DashboardPage() {
                 <card.icon className="h-6 w-6 text-white" />
               </div>
             </div>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -185,8 +186,8 @@ export default function DashboardPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Claims Trend</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
@@ -198,6 +199,7 @@ export default function DashboardPage() {
               <Line type="monotone" dataKey="denials" stroke="#EF4444" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </motion.div>
 
         {/* Claim Status Distribution */}
@@ -205,8 +207,8 @@ export default function DashboardPage() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Claim Status Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -234,6 +236,7 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          </div>
         </motion.div>
       </div>
 
@@ -242,8 +245,8 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="card"
       >
+        <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
         <div className="space-y-4">
           {[
@@ -270,6 +273,7 @@ export default function DashboardPage() {
               <span className="text-sm text-gray-400">{activity.time}</span>
             </div>
           ))}
+        </div>
         </div>
       </motion.div>
     </div>

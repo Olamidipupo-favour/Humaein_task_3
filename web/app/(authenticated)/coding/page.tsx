@@ -64,8 +64,8 @@ export default function CodingPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Clinical Information</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -144,6 +144,7 @@ export default function CodingPage() {
               )}
             </button>
           </form>
+          </div>
         </motion.div>
 
         {/* Results */}
@@ -151,8 +152,8 @@ export default function CodingPage() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Coding Suggestions</h3>
           
           {!result ? (
@@ -250,6 +251,7 @@ export default function CodingPage() {
               </div>
             </div>
           )}
+          </div>
         </motion.div>
       </div>
     </div>

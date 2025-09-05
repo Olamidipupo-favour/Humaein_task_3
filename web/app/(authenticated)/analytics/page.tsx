@@ -118,7 +118,7 @@ export default function AnalyticsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="card"
+            className="card" as any
           >
             <div className="flex items-center justify-between">
               <div>
@@ -153,7 +153,7 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
+          className="card" as any
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -177,7 +177,7 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
+          className="card" as any
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Denial Reasons</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -214,7 +214,7 @@ export default function AnalyticsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="card"
+        className="card" as any
       >
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

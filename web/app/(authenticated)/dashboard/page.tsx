@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useAuth } from '../../contexts/AuthContext'
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -27,23 +28,53 @@ export default function DashboardPage() {
   })
 
   const [loading, setLoading] = useState(true)
+  const { token } = useAuth()
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setStats({
-        totalClaims: 1250,
-        pendingClaims: 45,
-        paidClaims: 1100,
-        deniedClaims: 105,
-        totalRevenue: 2500000,
-        avgDaysToPayment: 28,
-        denialRate: 8.4,
-        cleanClaimRate: 91.6
-      })
-      setLoading(false)
-    }, 1000)
-  }, [])
+    const fetchStats = async () => {
+      if (!token) return
+      
+      try {
+        const response = await fetch('http://127.0.0.1:8000/rcm/dashboard/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        const data = await response.json()
+        
+        if (data.success) {
+          setStats({
+            totalClaims: data.data.total_claims,
+            pendingClaims: data.data.pending_claims,
+            paidClaims: data.data.paid_claims,
+            deniedClaims: data.data.denied_claims,
+            totalRevenue: data.data.total_revenue,
+            avgDaysToPayment: data.data.avg_days_to_payment,
+            denialRate: data.data.denial_rate,
+            cleanClaimRate: data.data.clean_claim_rate
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error)
+        // Fallback to demo data
+        setStats({
+          totalClaims: 1250,
+          pendingClaims: 45,
+          paidClaims: 1100,
+          deniedClaims: 105,
+          totalRevenue: 2500000,
+          avgDaysToPayment: 28,
+          denialRate: 8.4,
+          cleanClaimRate: 91.6
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [token])
 
   const chartData = [
     { month: 'Jan', claims: 120, denials: 10 },

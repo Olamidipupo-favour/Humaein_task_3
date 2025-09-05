@@ -4,18 +4,33 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Heart, Shield, Zap, Users, TrendingUp, CheckCircle } from 'lucide-react'
+import { useAuth } from './contexts/AuthContext'
 
 export default function HomePage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState('Admin')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
+  const { login } = useAuth()
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Store role in localStorage for demo
-    localStorage.setItem('userRole', role)
-    router.push('/dashboard')
+    setLoading(true)
+    setError('')
+    
+    try {
+      const success = await login(email, password)
+      if (success) {
+        router.push('/dashboard')
+      } else {
+        setError('Invalid email or password')
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const features = [
@@ -110,6 +125,12 @@ export default function HomePage() {
 
           <div className="card">
             <form onSubmit={handleLogin} className="space-y-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+              
               <div>
                 <label className="label block mb-2">
                   Email
@@ -138,27 +159,19 @@ export default function HomePage() {
                 />
               </div>
 
-              <div>
-                <label className="label block mb-2">
-                  Role (Demo)
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="input"
-                >
-                  <option value="Admin">Admin</option>
-                  <option value="Biller">Biller</option>
-                  <option value="Coder">Coder</option>
-                  <option value="Analyst">Analyst</option>
-                </select>
-              </div>
-
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full btn-primary py-3 text-base"
               >
-                Sign In
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Signing In...
+                  </div>
+                ) : (
+                  'Sign In'
+                )}
               </button>
             </form>
 

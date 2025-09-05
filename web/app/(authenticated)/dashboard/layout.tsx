@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from '../../contexts/AuthContext'
 import { 
   LayoutDashboard, 
   UserCheck, 
@@ -25,13 +26,9 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Eligibility', href: '/eligibility', icon: UserCheck },
   { name: 'Prior Auth', href: '/prior-auth', icon: Shield },
-  { name: 'Clinical Docs', href: '/docs', icon: FileText },
   { name: 'Medical Coding', href: '/coding', icon: Code },
-  { name: 'Claims Scrubbing', href: '/scrubbing', icon: CheckCircle },
-  { name: 'Claims Submission', href: '/claims', icon: Send },
-  { name: 'Remittance', href: '/remittance', icon: DollarSign },
-  { name: 'Denials', href: '/denials', icon: AlertTriangle },
-  { name: 'Reconciliation', href: '/reconciliation', icon: RotateCcw },
+  { name: 'Claims Management', href: '/claims', icon: Send },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
 ]
 
 export default function DashboardLayout({
@@ -40,17 +37,31 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userRole, setUserRole] = useState('Admin')
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, logout, isLoading } = useAuth()
 
   useEffect(() => {
-    const role = localStorage.getItem('userRole') || 'Admin'
-    setUserRole(role)
-  }, [])
+    if (!isLoading && !user) {
+      router.push('/')
+    }
+  }, [user, isLoading, router])
 
   const handleLogout = () => {
-    localStorage.removeItem('userRole')
-    window.location.href = '/'
+    logout()
+    router.push('/')
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
   }
 
   return (
@@ -134,7 +145,7 @@ export default function DashboardLayout({
               <div className="flex items-center gap-x-2">
                 <span className="text-sm text-gray-500">Role:</span>
                 <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                  {userRole}
+                  {user.role}
                 </span>
               </div>
               <button

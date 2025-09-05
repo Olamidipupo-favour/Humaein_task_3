@@ -113,14 +113,13 @@ export default function AnalyticsPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpiCards.map((card, index) => (
-          // @ts-ignore
           <motion.div
             key={card.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="card"
           >
+            <div className="card">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{card.title}</p>
@@ -143,6 +142,7 @@ export default function AnalyticsPage() {
                 <card.icon className="h-6 w-6 text-white" />
               </div>
             </div>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -150,13 +150,12 @@ export default function AnalyticsPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend */}
-        {/* @ts-ignore */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={revenueData}>
@@ -172,16 +171,16 @@ export default function AnalyticsPage() {
               <Line type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </motion.div>
 
         {/* Denial Reasons */}
-        {/* @ts-ignore */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="card"
         >
+          <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Denial Reasons</h3>
           <ResponsiveContainer width="100%" height={300}>
             <RechartsPieChart>
@@ -209,17 +208,17 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
+          </div>
         </motion.div>
       </div>
 
       {/* Performance Metrics */}
-      {/* @ts-ignore */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="card"
       >
+        <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
@@ -237,6 +236,7 @@ export default function AnalyticsPage() {
             <div className="text-sm text-gray-600">Monthly Revenue</div>
             <div className="text-xs text-green-600 mt-1">+12.5% growth</div>
           </div>
+        </div>
         </div>
       </motion.div>
     </div>

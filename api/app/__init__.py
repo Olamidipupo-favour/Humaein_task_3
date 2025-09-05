@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from app.core.config import Config
 from app.core.db import init_db
 from app.rcm.routes import rcm_bp
+from app.auth.routes import auth_bp
 
 load_dotenv()
 
@@ -27,6 +28,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     init_db(app)
     
     # Register blueprints
+    app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(rcm_bp, url_prefix="/rcm")
     
     # Health check endpoint

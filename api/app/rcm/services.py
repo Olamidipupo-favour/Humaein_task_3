@@ -204,9 +204,10 @@ class RCMService:
             **ai_result
         }
     
-    def get_dashboard_stats(self) -> Dict[str, Any]:
+    def get_dashboard_stats(self, user_id: Optional[int] = None) -> Dict[str, Any]:
         """Get dashboard statistics."""
-        # Mock statistics
+        # For now, return mock statistics
+        # In production, you would filter by user_id or organization
         stats = {
             "total_claims": 1250,
             "pending_claims": 45,

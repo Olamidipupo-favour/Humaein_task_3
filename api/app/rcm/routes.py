@@ -17,6 +17,7 @@ from app.core.schemas import (
     ErrorResponse
 )
 from app.core.db import get_db_session
+from app.core.auth import require_auth
 from app.rcm.services import RCMService
 
 rcm_bp = Blueprint("rcm", __name__)
@@ -171,6 +172,7 @@ def suggest_coding():
         return jsonify(response.dict()), 200
         
     except ValidationError as e:
+        print(e)
         return jsonify(ErrorResponse(
             success=False,
             message="Validation error",
@@ -370,7 +372,8 @@ def appeal_denial():
 
 
 @rcm_bp.route("/dashboard/stats", methods=["GET"])
-def get_dashboard_stats():
+@require_auth
+def get_dashboard_stats(current_user):
     """Get dashboard statistics."""
     trace_id = generate_trace_id()
     
@@ -379,8 +382,8 @@ def get_dashboard_stats():
         db = get_db_session()
         rcm_service = RCMService(db)
         
-        # Get dashboard stats
-        stats = rcm_service.get_dashboard_stats()
+        # Get dashboard stats for the current user
+        stats = rcm_service.get_dashboard_stats(user_id=current_user.id)
         
         return jsonify({
             "success": True,

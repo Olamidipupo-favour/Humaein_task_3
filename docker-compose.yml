@@ -15,9 +15,6 @@ services:
       - MODEL_NAME=gemini-1.5-pro
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

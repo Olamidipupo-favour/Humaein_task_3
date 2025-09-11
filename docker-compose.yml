@@ -11,7 +11,7 @@ services:
       - DATABASE_URL=postgresql+psycopg://humaein:Postgres123!!@ep-lively-sun-a5i0suhp-pooler.us-east-2.aws.neon.tech:5432/rcm
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - APP_ENV=production
-      - ALLOW_ORIGINS=http://localhost:3001,http://web:3001
+      - ALLOW_ORIGINS=http://localhost:3001,http://web:3001,http://145.223.88.159:3001
       - MODEL_NAME=gemini-1.5-pro
     ports:
       - "8000:8000"

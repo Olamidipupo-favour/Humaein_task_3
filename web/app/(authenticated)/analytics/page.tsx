@@ -29,6 +29,7 @@ import {
   Cell,
 } from "recharts";
 
+import { useAuth } from "../../contexts/AuthContext";
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("30d");
   const [loading, setLoading] = useState(true);

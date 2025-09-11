@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database
@@ -28,7 +28,7 @@ services:
       dockerfile: Dockerfile
     container_name: rcm-gcc-api
     environment:
-      - DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/rcm
+      - DATABASE_URL=postgresql+psycopg://humaein:Postgres123!!@ep-lively-sun-a5i0suhp-pooler.us-east-2.aws.neon.tech:5432/rcm
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - APP_ENV=production
       - ALLOW_ORIGINS=http://localhost:3001,http://web:3001

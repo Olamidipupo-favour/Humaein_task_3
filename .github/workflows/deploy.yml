@@ -1,0 +1,28 @@
+name: Deploy Application
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy_to_production:
+    name: Deploy to production server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Executing remote ssh commands using key
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            cd Humaein_task_3
+            git pull origin main
+            docker image prune -a
+            docker ps -a --filter "name=rcm-gcc-api" --format "{{.ID}}" | xargs -r docker rm -f
+            docker ps -a --filter "name=rcm-gcc-web" --format "{{.ID}}" | xargs -r docker rm -f
+            docker compose up --build -d
+
+            exit

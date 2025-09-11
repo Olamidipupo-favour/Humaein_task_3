@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyToken = async (tokenToVerify: string) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/auth/verify', {
+      const response = await fetch('http://145.223.88.159:8000/auth/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/auth/login', {
+      const response = await fetch('http://145.223.88.159:8000/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Call logout endpoint
     if (token) {
-      fetch('http://127.0.0.1:8000/auth/logout', {
+      fetch('http://145.223.88.159:8000/auth/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

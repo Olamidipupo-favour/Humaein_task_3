@@ -236,6 +236,53 @@ def scrub_claim():
         ).dict()), 500
 
 
+@rcm_bp.route("/claims/scrub", methods=["POST"])
+def scrub_claim_route():
+    """Scrub claim for issues."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Validate request
+        request_data = request.get_json()
+        scrubbing_request = ScrubbingRequest(**request_data)
+        
+        # Get database session
+        db = get_db_session()
+        rcm_service = RCMService(db)
+        
+        # Process claim scrubbing
+        result = rcm_service.scrub_claim(
+            claim_data=scrubbing_request.claim_data,
+            payer_rules=scrubbing_request.payer_rules
+        )
+        
+        # Prepare response
+        response = ScrubbingResponse(
+            data=result,
+            issues=result.get("issues", []),
+            recommendations=result.get("recommendations", []),
+            trace_id=trace_id
+        )
+        
+        return jsonify(response.dict()), 200
+        
+    except ValidationError as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Validation error",
+            error_code="VALIDATION_ERROR",
+            details={"errors": e.errors()},
+            trace_id=trace_id
+        ).dict()), 400
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
 @rcm_bp.route("/claims/submit", methods=["POST"])
 def submit_claim():
     """Submit claim to payer."""
@@ -274,6 +321,41 @@ def submit_claim():
             details={"errors": e.errors()},
             trace_id=trace_id
         ).dict()), 400
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/claims/track/<claim_id>", methods=["GET"])
+def track_claim(claim_id: str):
+    """Track claim status."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        rcm_service = RCMService(db)
+        
+        # Get claim status
+        result = rcm_service.track_claim(claim_id)
+        
+        if "error" in result:
+            return jsonify(ErrorResponse(
+                success=False,
+                message=result["error"],
+                trace_id=trace_id
+            ).dict()), 404
+        
+        return jsonify({
+            "success": True,
+            "data": result,
+            "trace_id": trace_id
+        }), 200
+        
     except Exception as e:
         return jsonify(ErrorResponse(
             success=False,
@@ -388,6 +470,64 @@ def get_dashboard_stats(current_user):
         return jsonify({
             "success": True,
             "data": stats,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/analytics/revenue", methods=["GET"])
+@require_auth
+def get_revenue_analytics(current_user):
+    """Get revenue analytics data."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        rcm_service = RCMService(db)
+        
+        # Get revenue analytics
+        analytics = rcm_service.get_revenue_analytics(user_id=current_user.id)
+        
+        return jsonify({
+            "success": True,
+            "data": analytics,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/analytics/denials", methods=["GET"])
+@require_auth
+def get_denial_analytics(current_user):
+    """Get denial analytics data."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        rcm_service = RCMService(db)
+        
+        # Get denial analytics
+        analytics = rcm_service.get_denial_analytics(user_id=current_user.id)
+        
+        return jsonify({
+            "success": True,
+            "data": analytics,
             "trace_id": trace_id
         }), 200
         

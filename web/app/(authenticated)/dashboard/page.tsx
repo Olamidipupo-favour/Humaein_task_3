@@ -35,7 +35,7 @@ export default function DashboardPage() {
       if (!token) return
       
       try {
-        const response = await fetch('http://127.0.0.1:8000/rcm/dashboard/stats', {
+        const response = await fetch('http://145.223.88.159:8000/rcm/dashboard/stats', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

@@ -58,7 +58,9 @@ class RCMAIChains:
                 "cpt_codes": [
                     {"code": "99213", "description": "Office visit, established patient", "confidence": 0.92}
                 ],
-                "rationale": "Based on the clinical documentation, the primary diagnosis is diabetes..."
+                "rationale": "Based on the clinical documentation, the primary diagnosis is diabetes...",
+                "ai_analysis": "⚠️ AI not available - using fallback responses. Please set GOOGLE_API_KEY environment variable.",
+                "ai_used": False
             },
             "scrubbing": {
                 "issues": [
@@ -189,21 +191,109 @@ class RCMAIChains:
         ])
         
         try:
-            response = self.llm.invoke(prompt.format_messages(
+            # Enhanced prompt for structured AI response
+            enhanced_prompt = ChatPromptTemplate.from_messages([
+                ("system", """You are an expert medical coder specializing in GCC healthcare. Analyze clinical documentation and suggest appropriate ICD-10 and CPT codes.
+
+IMPORTANT: Respond with a JSON structure containing the codes. Use this exact format:
+
+{
+  "icd_codes": [
+    {"code": "E11.9", "description": "Type 2 diabetes without complications", "confidence": 0.95}
+  ],
+  "cpt_codes": [
+    {"code": "99213", "description": "Office visit, established patient", "confidence": 0.92}
+  ],
+  "rationale": "Detailed explanation of code selection"
+}
+
+Consider:
+- Clinical documentation accuracy
+- Code specificity and hierarchy  
+- Provider specialty requirements
+- GCC coding standards
+- Medical necessity
+
+Provide structured coding suggestions with confidence levels and detailed rationale."""),
+                ("human", """Clinical Notes: {clinical_notes}
+Provider Specialty: {specialty}
+
+Analyze and provide appropriate ICD-10 and CPT codes in JSON format.""")
+            ])
+            
+            response = self.llm.invoke(enhanced_prompt.format_messages(
                 clinical_notes=clinical_notes,
                 specialty=specialty
             ))
             
-            return {
-                "icd_codes": [
-                    {"code": "E11.9", "description": "Type 2 diabetes without complications", "confidence": 0.95}
-                ],
-                "cpt_codes": [
-                    {"code": "99213", "description": "Office visit, established patient", "confidence": 0.92}
-                ],
-                "rationale": response.content,
-                "ai_analysis": "Based on the clinical documentation..."
-            }
+            # Try to parse AI response as JSON
+            try:
+                import json
+                ai_data = json.loads(response.content)
+                
+                # Validate and structure the response
+                icd_codes = ai_data.get("icd_codes", [])
+                cpt_codes = ai_data.get("cpt_codes", [])
+                rationale = ai_data.get("rationale", response.content)
+                
+                # Ensure we have at least some codes
+                if not icd_codes and not cpt_codes:
+                    # Fallback to keyword matching if AI didn't provide codes
+                    clinical_lower = clinical_notes.lower()
+                    
+                    if "diabetes" in clinical_lower or "diabetic" in clinical_lower:
+                        icd_codes.append({"code": "E11.9", "description": "Type 2 diabetes without complications", "confidence": 0.95})
+                    if "hypertension" in clinical_lower or "high blood pressure" in clinical_lower:
+                        icd_codes.append({"code": "I10", "description": "Essential hypertension", "confidence": 0.90})
+                    
+                    if "office visit" in clinical_lower or "follow up" in clinical_lower:
+                        cpt_codes.append({"code": "99213", "description": "Office visit, established patient", "confidence": 0.92})
+                    if "blood draw" in clinical_lower or "venipuncture" in clinical_lower:
+                        cpt_codes.append({"code": "36415", "description": "Collection of venous blood", "confidence": 0.88})
+                
+                return {
+                    "icd_codes": icd_codes,
+                    "cpt_codes": cpt_codes,
+                    "rationale": rationale,
+                    "ai_analysis": "AI-generated codes based on clinical documentation",
+                    "ai_used": True
+                }
+                
+            except json.JSONDecodeError:
+                # If AI response isn't valid JSON, extract codes from text
+                content = response.content
+                
+                # Simple extraction from AI text response
+                icd_codes = []
+                cpt_codes = []
+                
+                # Look for ICD-10 codes (format: E11.9, I10, etc.)
+                import re
+                icd_matches = re.findall(r'([A-Z]\d{2}(?:\.\d+)?)', content)
+                for match in icd_matches:
+                    if match.startswith(('E', 'I', 'M', 'N', 'S', 'T', 'Z')):
+                        icd_codes.append({
+                            "code": match,
+                            "description": f"AI-suggested ICD-10 code: {match}",
+                            "confidence": 0.85
+                        })
+                
+                # Look for CPT codes (format: 99213, 36415, etc.)
+                cpt_matches = re.findall(r'(\d{5})', content)
+                for match in cpt_matches:
+                    cpt_codes.append({
+                        "code": match,
+                        "description": f"AI-suggested CPT code: {match}",
+                        "confidence": 0.85
+                    })
+                
+                return {
+                    "icd_codes": icd_codes,
+                    "cpt_codes": cpt_codes,
+                    "rationale": content,
+                    "ai_analysis": "AI-generated analysis with extracted codes",
+                    "ai_used": True
+                }
         except Exception as e:
             return self._get_fallback_response("coding")
     

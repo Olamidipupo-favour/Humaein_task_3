@@ -21,6 +21,8 @@ export default function ClaimsPage() {
   })
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [trackingClaimId, setTrackingClaimId] = useState('')
+  const [trackingResult, setTrackingResult] = useState<any>(null)
   const { token } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,8 +30,8 @@ export default function ClaimsPage() {
     setLoading(true)
     
     try {
-      const endpoint = activeTab === 'scrub' ? 'scrub' : 'submit'
-      const response = await fetch(`http://127.0.0.1:8000/rcm/claims/${endpoint}`, {
+      const endpoint = activeTab === 'scrub' ? 'claims/scrub' : 'claims/submit'
+      const response = await fetch(`http://145.223.88.159:8000/rcm/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,6 +45,28 @@ export default function ClaimsPage() {
     } catch (error) {
       console.error('Claims operation failed:', error)
       setResult({ success: false, error: 'Failed to process claim' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleTrackClaim = async () => {
+    if (!trackingClaimId.trim()) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`http://145.223.88.159:8000/rcm/claims/track/${trackingClaimId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      const data = await response.json()
+      setTrackingResult(data)
+    } catch (error) {
+      console.error('Claim tracking failed:', error)
+      setTrackingResult({ success: false, error: 'Failed to track claim' })
     } finally {
       setLoading(false)
     }
@@ -122,13 +146,28 @@ export default function ClaimsPage() {
                 <label className="label block mb-2">Claim ID</label>
                 <input
                   type="text"
+                  value={trackingClaimId}
+                  onChange={(e) => setTrackingClaimId(e.target.value)}
                   placeholder="Enter claim ID to track"
                   className="input"
                 />
               </div>
-              <button className="w-full btn-primary py-3 text-base">
-                <Eye className="w-4 h-4 mr-2" />
-                Track Claim
+              <button 
+                onClick={handleTrackClaim}
+                disabled={loading || !trackingClaimId.trim()}
+                className="w-full btn-primary py-3 text-base"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Tracking...
+                  </div>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Track Claim
+                  </>
+                )}
               </button>
             </div>
           ) : (
@@ -271,7 +310,7 @@ export default function ClaimsPage() {
           <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Results</h3>
           
-          {!result ? (
+          {!result && !trackingResult ? (
             <div className="text-center py-8 text-gray-500">
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>
@@ -280,9 +319,38 @@ export default function ClaimsPage() {
                 {activeTab === 'track' && 'Enter claim ID to view status'}
               </p>
             </div>
-          ) : result.success ? (
+          ) : (result?.success || trackingResult?.success) ? (
             <div className="space-y-4">
-              {activeTab === 'scrub' ? (
+              {activeTab === 'track' ? (
+                <>
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                    <span className="font-semibold text-green-700">Claim Found</span>
+                  </div>
+                  
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-green-800 mb-2">Claim Details</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Claim ID:</span>
+                        <span className="font-medium">{trackingResult.data.claim_id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Status:</span>
+                        <span className="font-medium">{trackingResult.data.status}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Service Date:</span>
+                        <span className="font-medium">{new Date(trackingResult.data.service_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Amount:</span>
+                        <span className="font-medium">${trackingResult.data.total_amount}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : activeTab === 'scrub' ? (
                 <>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="w-6 h-6 text-green-500" />
@@ -354,7 +422,7 @@ export default function ClaimsPage() {
               </div>
               
               <div className="bg-red-50 p-4 rounded-lg">
-                <p className="text-red-700">{result.error || 'Failed to process claim'}</p>
+                <p className="text-red-700">{(result?.error || trackingResult?.error) || 'Failed to process claim'}</p>
               </div>
             </div>
           )}

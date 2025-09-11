@@ -139,6 +139,35 @@ class RCMService:
             "total_amount": claim_data.get("total_amount", 0)
         }
     
+    def track_claim(self, claim_id: str) -> Dict[str, Any]:
+        """Track claim status."""
+        # Get claim from database
+        claim = self.db.query(Claim).filter(Claim.claim_id == claim_id).first()
+        
+        if not claim:
+            return {"error": "Claim not found"}
+        
+        # Mock status progression
+        status_mapping = {
+            ClaimStatus.SUBMITTED: "Submitted",
+            ClaimStatus.UNDER_REVIEW: "Under Review", 
+            ClaimStatus.APPROVED: "Approved",
+            ClaimStatus.PAID: "Paid",
+            ClaimStatus.DENIED: "Denied",
+            ClaimStatus.REJECTED: "Rejected"
+        }
+        
+        return {
+            "claim_id": claim_id,
+            "status": status_mapping.get(claim.status, "Unknown"),
+            "submission_date": claim.submission_date.isoformat() if claim.submission_date else None,
+            "service_date": claim.service_date.isoformat(),
+            "total_amount": claim.total_amount,
+            "payer_id": claim.payer_id,
+            "patient_id": claim.patient_id,
+            "last_updated": datetime.now().isoformat()
+        }
+    
     def get_remittance(self, claim_id: str) -> Dict[str, Any]:
         """Get remittance information for claim."""
         # Mock remittance data
@@ -220,3 +249,40 @@ class RCMService:
         }
         
         return stats
+    
+    def get_revenue_analytics(self, user_id: Optional[int] = None) -> Dict[str, Any]:
+        """Get revenue analytics data."""
+        # Mock revenue data - in production, query actual claims
+        revenue_data = [
+            {"month": "Jan", "revenue": 240000, "claims": 120},
+            {"month": "Feb", "revenue": 280000, "claims": 135},
+            {"month": "Mar", "revenue": 220000, "claims": 110},
+            {"month": "Apr", "revenue": 320000, "claims": 145},
+            {"month": "May", "revenue": 290000, "claims": 130},
+            {"month": "Jun", "revenue": 350000, "claims": 140},
+        ]
+        
+        return {
+            "revenue_trend": revenue_data,
+            "total_revenue": sum(item["revenue"] for item in revenue_data),
+            "avg_monthly_revenue": sum(item["revenue"] for item in revenue_data) / len(revenue_data),
+            "growth_rate": 12.5
+        }
+    
+    def get_denial_analytics(self, user_id: Optional[int] = None) -> Dict[str, Any]:
+        """Get denial analytics data."""
+        # Mock denial data - in production, query actual denials
+        denial_reasons = [
+            {"name": "Prior Auth Required", "value": 35, "color": "#EF4444"},
+            {"name": "Invalid Codes", "value": 25, "color": "#F59E0B"},
+            {"name": "Missing Documentation", "value": 20, "color": "#8B5CF6"},
+            {"name": "Eligibility Issues", "value": 15, "color": "#06B6D4"},
+            {"name": "Other", "value": 5, "color": "#10B981"},
+        ]
+        
+        return {
+            "denial_reasons": denial_reasons,
+            "total_denials": 105,
+            "denial_rate": 8.4,
+            "appeal_success_rate": 65.2
+        }

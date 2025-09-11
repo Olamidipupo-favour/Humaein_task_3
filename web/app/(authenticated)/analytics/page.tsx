@@ -19,23 +19,22 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('30d')
   const [loading, setLoading] = useState(true)
-
-  const revenueData = [
+  const [revenueData, setRevenueData] = useState([
     { month: 'Jan', revenue: 240000, claims: 120 },
     { month: 'Feb', revenue: 280000, claims: 135 },
     { month: 'Mar', revenue: 220000, claims: 110 },
     { month: 'Apr', revenue: 320000, claims: 145 },
     { month: 'May', revenue: 290000, claims: 130 },
     { month: 'Jun', revenue: 350000, claims: 140 },
-  ]
-
-  const denialReasons = [
+  ])
+  const [denialReasons, setDenialReasons] = useState([
     { name: 'Prior Auth Required', value: 35, color: '#EF4444' },
     { name: 'Invalid Codes', value: 25, color: '#F59E0B' },
     { name: 'Missing Documentation', value: 20, color: '#8B5CF6' },
     { name: 'Eligibility Issues', value: 15, color: '#06B6D4' },
     { name: 'Other', value: 5, color: '#10B981' },
-  ]
+  ])
+  const { token } = useAuth()
 
   const kpiCards = [
     {
@@ -73,9 +72,45 @@ export default function AnalyticsPage() {
   ]
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => setLoading(false), 1000)
-  }, [])
+    const fetchAnalytics = async () => {
+      if (!token) return
+      
+      try {
+        // Fetch revenue analytics
+        const revenueResponse = await fetch('http://145.223.88.159:8000/rcm/analytics/revenue', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        const revenueData = await revenueResponse.json()
+        
+        if (revenueData.success) {
+          setRevenueData(revenueData.data.revenue_trend)
+        }
+        
+        // Fetch denial analytics
+        const denialResponse = await fetch('http://145.223.88.159:8000/rcm/analytics/denials', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        const denialData = await denialResponse.json()
+        
+        if (denialData.success) {
+          setDenialReasons(denialData.data.denial_reasons)
+        }
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error)
+        // Keep default data on error
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAnalytics()
+  }, [token])
 
   if (loading) {
     return (

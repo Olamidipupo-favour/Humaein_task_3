@@ -20,7 +20,7 @@ export default function CodingPage() {
     setLoading(true)
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/rcm/coding/suggest', {
+      const response = await fetch('http://145.223.88.159:8000/rcm/coding/suggest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,10 +175,7 @@ export default function CodingPage() {
                   ICD-10 Diagnosis Codes
                 </h4>
                 <div className="space-y-2">
-                  {[
-                    { code: 'I10', description: 'Essential hypertension', confidence: 95 },
-                    { code: 'E11.9', description: 'Type 2 diabetes mellitus without complications', confidence: 88 }
-                  ].map((code, index) => (
+                  {result.icd_codes?.map((code: any, index: number) => (
                     <div key={index} className="bg-white p-3 rounded border">
                       <div className="flex items-center justify-between">
                         <div>
@@ -194,11 +191,15 @@ export default function CodingPage() {
                       </div>
                       <div className="mt-1">
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                          Confidence: {code.confidence}%
+                          Confidence: {Math.round((code.confidence || 0.8) * 100)}%
                         </span>
                       </div>
                     </div>
-                  ))}
+                  )) || (
+                    <div className="text-center py-4 text-gray-500">
+                      <p>No ICD-10 codes generated</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -209,10 +210,7 @@ export default function CodingPage() {
                   CPT Procedure Codes
                 </h4>
                 <div className="space-y-2">
-                  {[
-                    { code: '99213', description: 'Office visit, established patient', confidence: 92, rvu: '1.3' },
-                    { code: '36415', description: 'Collection of venous blood', confidence: 85, rvu: '0.2' }
-                  ].map((code, index) => (
+                  {result.cpt_codes?.map((code: any, index: number) => (
                     <div key={index} className="bg-white p-3 rounded border">
                       <div className="flex items-center justify-between">
                         <div>
@@ -228,16 +226,45 @@ export default function CodingPage() {
                       </div>
                       <div className="mt-1">
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                          Confidence: {code.confidence}%
+                          Confidence: {Math.round((code.confidence || 0.8) * 100)}%
                         </span>
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                          RVU: {code.rvu}
-                        </span>
+                        {code.rvu && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                            RVU: {code.rvu}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  ))}
+                  )) || (
+                    <div className="text-center py-4 text-gray-500">
+                      <p>No CPT codes generated</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* AI Status */}
+              <div className={`p-4 rounded-lg ${result.ai_used ? 'bg-green-50' : 'bg-yellow-50'}`}>
+                <h4 className={`font-medium mb-2 ${result.ai_used ? 'text-green-800' : 'text-yellow-800'}`}>
+                  {result.ai_used ? '✅ AI Analysis' : '⚠️ Fallback Mode'}
+                </h4>
+                <p className={`text-sm ${result.ai_used ? 'text-green-700' : 'text-yellow-700'}`}>
+                  {result.ai_analysis || result.rationale}
+                </p>
+                {!result.ai_used && (
+                  <p className="text-xs text-yellow-600 mt-2">
+                    To enable AI coding suggestions, set the GOOGLE_API_KEY environment variable in your backend configuration.
+                  </p>
+                )}
+              </div>
+
+              {/* AI Rationale */}
+              {result.rationale && result.ai_used && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-800 mb-2">Detailed Analysis</h4>
+                  <p className="text-sm text-gray-700">{result.rationale}</p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

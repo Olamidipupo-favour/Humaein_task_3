@@ -9,10 +9,18 @@ services:
     container_name: rcm-gcc-api
     environment:
       - DATABASE_URL=postgresql+psycopg://humaein:Postgres123!!@ep-lively-sun-a5i0suhp-pooler.us-east-2.aws.neon.tech:5432/rcm
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - APP_ENV=${APP_ENV:-production}
+      - DEBUG=${DEBUG:-false}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - APP_ENV=production
-      - ALLOW_ORIGINS=ttp://localhost:3000,http://localhost:3001,http://web:3001,http://145.223.88.159:3001,http://145.223.88.159:3002
-      - MODEL_NAME=gemini-1.5-pro
+      - GOOGLE_API_KEY_1=${GOOGLE_API_KEY_1:-}
+      - GOOGLE_API_KEY_2=${GOOGLE_API_KEY_2:-}
+      - MODEL_NAME=${MODEL_NAME:-gemini-2.5-flash-lite}
+      - ALLOW_ORIGINS=${ALLOW_ORIGINS:-http://localhost:3000,http://localhost:3001,http://web:3001,http://145.223.88.159:3001,http://145.223.88.159:3002}
+      - API_VERSION=${API_VERSION:-v1}
+      - MAX_CONTENT_LENGTH=${MAX_CONTENT_LENGTH:-16777216}
+      - REQUEST_TIMEOUT=${REQUEST_TIMEOUT:-30}
+      - AI_TIMEOUT=${AI_TIMEOUT:-60}
     ports:
       - "8001:8000"
     healthcheck:

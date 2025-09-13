@@ -30,12 +30,60 @@ import {
 } from "recharts";
 
 import { useAuth } from "../../contexts/AuthContext";
+
+interface KPIData {
+  revenue_growth?: {
+    value: string;
+    change: string;
+    changeType: string;
+  };
+  clean_claim_rate?: {
+    value: string;
+    change: string;
+    changeType: string;
+  };
+  avg_days_to_payment?: {
+    value: string;
+    change: string;
+    changeType: string;
+  };
+  denial_rate?: {
+    value: string;
+    change: string;
+    changeType: string;
+  };
+  first_pass_success_rate?: {
+    value: string;
+    change: string;
+  };
+  avg_days_to_payment_kpi?: {
+    value: string;
+    change: string;
+  };
+  monthly_revenue?: {
+    value: string;
+    change: string;
+  };
+}
+
+interface DenialReason {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface RevenueData {
+  month: string;
+  revenue: number;
+  claims: number;
+}
+
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("30d");
   const [loading, setLoading] = useState(true);
-  const [revenueData, setRevenueData] = useState([]);
-  const [denialReasons, setDenialReasons] = useState([]);
-  const [kpis, setKpis] = useState(null);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const [denialReasons, setDenialReasons] = useState<DenialReason[]>([]);
+  const [kpis, setKpis] = useState<KPIData | null>(null);
   const { token } = useAuth();
 
   useEffect(() => {
@@ -312,33 +360,33 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {kpis.first_pass_success_rate.value}
+                  {kpis.first_pass_success_rate?.value || "0%"}
                 </div>
                 <div className="text-sm text-gray-600">
                   First-Pass Success Rate
                 </div>
                 <div className="text-xs text-green-600 mt-1">
-                  {kpis.first_pass_success_rate.change}
+                  {kpis.first_pass_success_rate?.change || "0"}
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600 mb-2">
-                  {kpis.avg_days_to_payment_kpi.value}
+                  {kpis.avg_days_to_payment_kpi?.value || "0"}
                 </div>
                 <div className="text-sm text-gray-600">
                   Average Days to Payment
                 </div>
                 <div className="text-xs text-green-600 mt-1">
-                  {kpis.avg_days_to_payment_kpi.change}
+                  {kpis.avg_days_to_payment_kpi?.change || "0"}
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-yellow-600 mb-2">
-                  {kpis.monthly_revenue.value}
+                  {kpis.monthly_revenue?.value || "$0"}
                 </div>
                 <div className="text-sm text-gray-600">Monthly Revenue</div>
                 <div className="text-xs text-green-600 mt-1">
-                  {kpis.monthly_revenue.change}
+                  {kpis.monthly_revenue?.change || "0"}
                 </div>
               </div>
             </div>

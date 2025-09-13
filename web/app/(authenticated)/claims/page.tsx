@@ -31,6 +31,7 @@ export default function ClaimsPage() {
   const [trackingClaimId, setTrackingClaimId] = useState("");
   const [trackingResult, setTrackingResult] = useState<any>(null);
   const [payers, setPayers] = useState([]);
+  const { token } = useAuth();
 
   useEffect(() => {
     const fetchPayers = async () => {

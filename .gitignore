@@ -22,7 +22,6 @@ wheels/
 MANIFEST
 
 # Virtual environments
-.env
 .venv
 env/
 venv/
@@ -43,7 +42,6 @@ out/
 build/
 
 # Environment variables
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -144,3 +142,4 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+config.bat

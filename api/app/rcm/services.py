@@ -115,10 +115,23 @@ class RCMService:
         claim_id = f"CLM-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
         
         # Get related entities from DB
+        print(f"Looking up patient with insurance_id: {claim_data.get('patient_id')}")
         patient = self.db.query(Patient).filter(Patient.insurance_id == claim_data.get("patient_id")).first()
-        provider = self.db.query(Provider).filter(Provider.npi == claim_data.get("provider_npi")).first()
-        payer = self.db.query(Payer).filter(Payer.payer_id == payer_id).first()
+        
+        print(f"Looking up provider with npi: {claim_data.get('provider_id')}")
+        provider = self.db.query(Provider).filter(Provider.npi == claim_data.get("provider_id")).first()
+        
+        # Convert payer_id to integer with error handling
+        try:
+            payer_id_int = int(payer_id)
+            print(f"Looking up payer with id: {payer_id_int}")
+        except (ValueError, TypeError):
+            return {"error": "Invalid payer ID format."}
+        
+        payer = self.db.query(Payer).filter(Payer.id == payer_id_int).first()
 
+        print(f"Found entities - Patient: {patient is not None}, Provider: {provider is not None}, Payer: {payer is not None}")
+        
         if not all([patient, provider, payer]):
             return {"error": "Invalid patient, provider, or payer ID."}
 
@@ -126,6 +139,9 @@ class RCMService:
         encounter = Encounter(
             encounter_date=datetime.fromisoformat(claim_data.get("service_date", datetime.now().isoformat())),
             encounter_type=claim_data.get("service_type", "outpatient"),
+            diagnosis_codes=claim_data.get("diagnosis_codes", ""),
+            procedure_codes=claim_data.get("procedure_codes", ""),
+            clinical_notes=f"Claim submission for {patient.first_name} {patient.last_name}",
             patient_id=patient.id,
             provider_id=provider.id
         )
@@ -137,7 +153,7 @@ class RCMService:
             claim_id=claim_id,
             claim_date=datetime.now(),
             service_date=datetime.fromisoformat(claim_data.get("service_date", datetime.now().isoformat())),
-            total_amount=float(claim_data.get("total_amount", 0)),
+            total_amount=float(claim_data.get("amount", 0)),
             status=ClaimStatus.SUBMITTED,
             submission_date=datetime.now(),
             patient_id=patient.id,
@@ -166,12 +182,14 @@ class RCMService:
         
         # Mock status progression
         status_mapping = {
+            ClaimStatus.DRAFT: "Draft",
+            ClaimStatus.PENDING: "Pending",
             ClaimStatus.SUBMITTED: "Submitted",
-            ClaimStatus.UNDER_REVIEW: "Under Review", 
-            ClaimStatus.APPROVED: "Approved",
+            ClaimStatus.PROCESSING: "Processing",
             ClaimStatus.PAID: "Paid",
             ClaimStatus.DENIED: "Denied",
-            ClaimStatus.REJECTED: "Rejected"
+            ClaimStatus.APPEALED: "Appealed",
+            ClaimStatus.CLOSED: "Closed"
         }
         
         return {

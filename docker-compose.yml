@@ -12,7 +12,7 @@ services:
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - APP_ENV=${APP_ENV:-production}
       - DEBUG=${DEBUG:-false}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-AIzaSyDvwbFfPORaRIUkwoL1Y1PJZBf56bS7bpM}
       - GOOGLE_API_KEY_1=${GOOGLE_API_KEY_1:-}
       - GOOGLE_API_KEY_2=${GOOGLE_API_KEY_2:-}
       - MODEL_NAME=${MODEL_NAME:-gemini-2.5-flash-lite}

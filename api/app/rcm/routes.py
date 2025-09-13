@@ -599,43 +599,55 @@ def get_recent_activity(current_user):
 
 
 @rcm_bp.route("/analytics/kpis", methods=["GET"])
-def get_kpis():
+@require_auth
+def get_kpis(current_user):
     """Get a list of KPIs."""
     trace_id = generate_trace_id()
     
     try:
+        # Get database session
+        db = get_db_session()
+        rcm_service = RCMService(db)
+        
+        # Get dashboard stats for KPIs
+        stats = rcm_service.get_dashboard_stats(user_id=current_user.id)
+        
+        # Calculate growth rates (simplified for demo)
+        revenue_growth = 12.5  # This would be calculated from historical data
+        clean_claim_rate_change = 2.1  # This would be calculated from historical data
+        
         kpis = {
             "revenue_growth": {
-                "value": "+12.5%",
-                "change": "+$45K",
+                "value": f"+{revenue_growth}%",
+                "change": f"+${stats.get('total_revenue', 0) * 0.1:.0f}K",
                 "changeType": "positive",
             },
             "clean_claim_rate": {
-                "value": "94.2%",
-                "change": "+2.1%",
+                "value": f"{stats.get('clean_claim_rate', 0)}%",
+                "change": f"+{clean_claim_rate_change}%",
                 "changeType": "positive",
             },
             "avg_days_to_payment": {
-                "value": "28 days",
+                "value": f"{stats.get('avg_days_to_payment', 0)} days",
                 "change": "-3 days",
                 "changeType": "positive",
             },
             "denial_rate": {
-                "value": "5.8%",
+                "value": f"{stats.get('denial_rate', 0)}%",
                 "change": "-1.2%",
                 "changeType": "positive",
             },
             "first_pass_success_rate": {
-                "value": "94.2%",
-                "change": "+2.1% from last month",
+                "value": f"{stats.get('clean_claim_rate', 0)}%",
+                "change": f"+{clean_claim_rate_change}% from last month",
             },
             "avg_days_to_payment_kpi": {
-                "value": "28",
+                "value": f"{stats.get('avg_days_to_payment', 0)}",
                 "change": "-3 days improvement",
             },
             "monthly_revenue": {
-                "value": "$2.5M",
-                "change": "+12.5% growth",
+                "value": f"${stats.get('total_revenue', 0):,.0f}",
+                "change": f"+{revenue_growth}% growth",
             },
         }
         
@@ -649,6 +661,120 @@ def get_kpis():
         return jsonify(ErrorResponse(
             success=False,
             message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/seed-demo-data", methods=["POST"])
+@require_auth
+def seed_demo_data(current_user):
+    """Seed demo data for testing."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        
+        # Create some sample claims for the last 6 months
+        from datetime import datetime, timedelta
+        import random
+        from app.rcm.models import Claim, ClaimStatus, Patient, Provider, Payer, Encounter
+        
+        # Get or create sample entities
+        patient = db.query(Patient).first()
+        provider = db.query(Provider).first()
+        payer = db.query(Payer).first()
+        
+        if not patient:
+            patient = Patient(
+                first_name="Demo",
+                last_name="Patient",
+                date_of_birth=datetime(1980, 1, 1),
+                gender="Male",
+                insurance_id="DEMO-001",
+                address="123 Demo Street",
+                phone="+966-50-123-4567",
+                email="demo@patient.com"
+            )
+            db.add(patient)
+            db.flush()  # Use flush instead of commit to get the ID
+        
+        if not provider:
+            provider = Provider(
+                name="Dr. Demo Provider",
+                npi="1234567890",
+                specialty="General Practice",
+                address="456 Medical Center",
+                phone="+966-11-123-4567",
+                email="demo@provider.com"
+            )
+            db.add(provider)
+            db.flush()  # Use flush instead of commit to get the ID
+        
+        if not payer:
+            payer = Payer(
+                name="Demo Insurance",
+                payer_id="DEMO-INS-001",
+                payer_type="Private",
+                address="789 Insurance Plaza",
+                phone="+966-11-987-6543",
+                email="demo@insurance.com"
+            )
+            db.add(payer)
+            db.flush()  # Use flush instead of commit to get the ID
+        
+        # Create claims for the last 6 months
+        current_date = datetime.utcnow()
+        claims_created = 0
+        for i in range(6):
+            month_start = current_date.replace(day=1) - timedelta(days=30 * i)
+            for j in range(random.randint(5, 15)):  # 5-15 claims per month
+                claim_date = month_start + timedelta(days=random.randint(1, 28))
+                
+                # Create an encounter for each claim
+                encounter = Encounter(
+                    encounter_date=claim_date,
+                    encounter_type=random.choice(["Inpatient", "Outpatient", "Emergency"]),
+                    diagnosis_codes='["E11.9"]',  # JSON string
+                    procedure_codes='["99213"]',  # JSON string
+                    clinical_notes=f"Demo encounter for claim {j}",
+                    patient_id=patient.id,
+                    provider_id=provider.id
+                )
+                db.add(encounter)
+                db.flush()  # Get the encounter ID
+                
+                claim = Claim(
+                    claim_id=f"DEMO-{claim_date.strftime('%Y%m%d')}-{random.randint(1000, 9999)}",
+                    claim_date=claim_date,
+                    service_date=claim_date,
+                    total_amount=round(random.uniform(200.0, 1500.0), 2),
+                    status=random.choice(list(ClaimStatus)),
+                    submission_date=claim_date + timedelta(days=1),
+                    patient_id=patient.id,
+                    provider_id=provider.id,
+                    payer_id=payer.id,
+                    encounter_id=encounter.id
+                )
+                db.add(claim)
+                claims_created += 1
+        
+        db.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Demo data seeded successfully. Created {claims_created} claims.",
+            "claims_created": claims_created,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in seed_demo_data: {str(e)}")  # Debug logging
+        db.rollback()  # Rollback on error
+        return jsonify(ErrorResponse(
+            success=False,
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500

@@ -13,6 +13,7 @@ import {
   FileText,
   BarChart3,
   PieChart,
+  RefreshCw,
 } from "lucide-react";
 import {
   LineChart,
@@ -84,60 +85,91 @@ export default function AnalyticsPage() {
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [denialReasons, setDenialReasons] = useState<DenialReason[]>([]);
   const [kpis, setKpis] = useState<KPIData | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { token } = useAuth();
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!token) return;
+  const fetchAnalytics = async () => {
+    if (!token) return;
 
-      try {
-        setLoading(true);
-        const [revenueRes, denialsRes, kpisRes] = await Promise.all([
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/revenue`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          ),
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/denials`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          ),
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/kpis`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          ),
-        ]);
+    try {
+      setLoading(true);
+      const [revenueRes, denialsRes, kpisRes] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/revenue?timeRange=${timeRange}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/denials?timeRange=${timeRange}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/kpis?timeRange=${timeRange}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        ),
+      ]);
 
-        if (!revenueRes.ok || !denialsRes.ok || !kpisRes.ok) {
-          throw new Error("Failed to fetch analytics data");
+        // Handle each response individually
+        if (revenueRes.ok) {
+          const revenueData = await revenueRes.json();
+          console.log("Revenue API response:", revenueData);
+          if (revenueData.success) {
+            setRevenueData(revenueData.data?.revenue_trend || []);
+          } else {
+            console.error("Revenue API returned unsuccessful response:", revenueData);
+            setRevenueData([]);
+          }
+        } else {
+          console.error("Failed to fetch revenue data:", revenueRes.status);
+          setRevenueData([]);
         }
 
-        const revenueData = await revenueRes.json();
-        const denialsData = await denialsRes.json();
-        const kpisData = await kpisRes.json();
-
-        if (revenueData.success) {
-          setRevenueData(revenueData.data.revenue_trend);
+        if (denialsRes.ok) {
+          const denialsData = await denialsRes.json();
+          console.log("Denials API response:", denialsData);
+          if (denialsData.success) {
+            setDenialReasons(denialsData.data?.denial_reasons || []);
+          } else {
+            console.error("Denials API returned unsuccessful response:", denialsData);
+            setDenialReasons([]);
+          }
+        } else {
+          console.error("Failed to fetch denials data:", denialsRes.status);
+          setDenialReasons([]);
         }
 
-        if (denialsData.success) {
-          setDenialReasons(denialsData.data.denial_reasons);
+        if (kpisRes.ok) {
+          const kpisData = await kpisRes.json();
+          console.log("KPIs API response:", kpisData);
+          if (kpisData.success) {
+            setKpis(kpisData.data || null);
+          } else {
+            console.error("KPIs API returned unsuccessful response:", kpisData);
+            setKpis(null);
+          }
+        } else {
+          console.error("Failed to fetch KPIs data:", kpisRes.status);
+          setKpis(null);
         }
 
-        if (kpisData.success) {
-          setKpis(kpisData.data);
-        }
+        // Store debug info
+        setDebugInfo({
+          revenueData: revenueData,
+          denialReasons: denialReasons,
+          kpis: kpis,
+          timestamp: new Date().toISOString()
+        });
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
       } finally {
@@ -145,8 +177,9 @@ export default function AnalyticsPage() {
       }
     };
 
+  useEffect(() => {
     fetchAnalytics();
-  }, [token]);
+  }, [token, timeRange]);
 
   const kpiCards = kpis
     ? [
@@ -203,20 +236,54 @@ export default function AnalyticsPage() {
           </h1>
           <p className="text-gray-600">Comprehensive RCM performance metrics</p>
         </div>
-        <div className="flex space-x-2">
-          {["7d", "30d", "90d", "1y"].map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-3 py-1 text-sm rounded-md ${
-                timeRange === range
-                  ? "bg-blue-100 text-blue-700"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {range}
-            </button>
-          ))}
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/seed-demo-data`, {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+                if (response.ok) {
+                  alert('Demo data seeded successfully! Refreshing analytics...');
+                  fetchAnalytics();
+                } else {
+                  alert('Failed to seed demo data');
+                }
+              } catch (error) {
+                console.error('Error seeding demo data:', error);
+                alert('Error seeding demo data');
+              }
+            }}
+            className="flex items-center space-x-2 px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            <span>Seed Demo Data</span>
+          </button>
+          <button
+            onClick={fetchAnalytics}
+            disabled={loading}
+            className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <div className="flex space-x-2">
+            {["7d", "30d", "90d", "1y"].map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-3 py-1 text-sm rounded-md ${
+                  timeRange === range
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -389,6 +456,26 @@ export default function AnalyticsPage() {
                   {kpis.monthly_revenue?.change || "0"}
                 </div>
               </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Debug Panel */}
+      {debugInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Debug Information
+            </h3>
+            <div className="bg-gray-100 p-4 rounded-lg">
+              <pre className="text-xs text-gray-700 overflow-auto max-h-64">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
             </div>
           </div>
         </motion.div>

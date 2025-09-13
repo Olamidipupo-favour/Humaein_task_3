@@ -159,19 +159,28 @@ class RCMAIChains:
                 "ai_used": False,
             },
             "scrubbing": {
+                "clean_claim_rate": 75,
                 "issues": [
                     {
                         "type": "missing_field",
                         "field": "diagnosis_code",
                         "severity": "high",
+                        "message": "Primary diagnosis code is missing"
                     },
-                    {"type": "invalid_code", "field": "cpt_code", "severity": "medium"},
+                    {
+                        "type": "invalid_code", 
+                        "field": "cpt_code", 
+                        "severity": "medium",
+                        "message": "CPT code may be invalid"
+                    },
                 ],
                 "recommendations": [
                     "Add primary diagnosis code",
                     "Verify CPT code validity",
                     "Check provider credentials",
                 ],
+                "ai_analysis": "⚠️ AI not available - using fallback responses. Please set GOOGLE_API_KEY environment variable.",
+                "ai_used": False,
             },
             "denial_explainer": {
                 "analysis": "This denial appears to be due to missing clinical documentation...",
@@ -525,23 +534,71 @@ Analyze and provide appropriate ICD-10 and CPT codes in JSON format.""",
                     prompt.format_messages(claim_data=str(claim_data))
                 )
 
+                # Parse the AI response to extract structured data
+                ai_content = response.content
+                
+                # Basic validation of claim data
+                issues = []
+                recommendations = []
+                
+                # Check for missing required fields
+                if not claim_data.get("patient_id"):
+                    issues.append({
+                        "type": "missing_field",
+                        "field": "patient_id",
+                        "severity": "high",
+                        "message": "Patient ID is required"
+                    })
+                    recommendations.append("Enter a valid patient ID")
+                
+                if not claim_data.get("provider_id"):
+                    issues.append({
+                        "type": "missing_field", 
+                        "field": "provider_id",
+                        "severity": "high",
+                        "message": "Provider ID is required"
+                    })
+                    recommendations.append("Enter a valid provider ID")
+                
+                if not claim_data.get("diagnosis_codes"):
+                    issues.append({
+                        "type": "missing_field",
+                        "field": "diagnosis_codes", 
+                        "severity": "high",
+                        "message": "Diagnosis codes are required"
+                    })
+                    recommendations.append("Add primary diagnosis codes")
+                
+                if not claim_data.get("procedure_codes"):
+                    issues.append({
+                        "type": "missing_field",
+                        "field": "procedure_codes",
+                        "severity": "high", 
+                        "message": "Procedure codes are required"
+                    })
+                    recommendations.append("Add procedure codes")
+                
+                if not claim_data.get("amount") or float(claim_data.get("amount", 0)) <= 0:
+                    issues.append({
+                        "type": "invalid_amount",
+                        "field": "amount",
+                        "severity": "medium",
+                        "message": "Invalid claim amount"
+                    })
+                    recommendations.append("Enter a valid claim amount")
+                
+                # Calculate clean claim rate based on issues found
+                clean_claim_rate = max(0, 100 - (len(issues) * 20))
+                
                 return {
-                    "issues": [
-                        {
-                            "type": "missing_field",
-                            "field": "diagnosis_code",
-                            "severity": "high",
-                        },
-                        {"type": "invalid_code", "field": "cpt_code", "severity": "medium"},
-                    ],
-                    "recommendations": [
-                        "Add primary diagnosis code",
-                        "Verify CPT code validity",
-                        "Check provider credentials",
-                    ],
-                    "ai_analysis": response.content,
+                    "clean_claim_rate": clean_claim_rate,
+                    "issues": issues,
+                    "recommendations": recommendations,
+                    "ai_analysis": ai_content,
+                    "claim_data": claim_data
                 }
             except Exception as e:
+                print(f"AI scrubbing error: {str(e)}")
                 return self._get_fallback_response("scrubbing")
 
         return self._try_with_fallback(_call_ai, "scrubbing")

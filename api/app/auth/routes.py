@@ -133,6 +133,82 @@ def login():
 
 
 
+@auth_bp.route("/verify", methods=["POST"])
+def verify():
+    """Token verification endpoint."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Validate request
+        request_data = request.get_json()
+        verify_request = VerifyRequest(**request_data)
+        
+        # Verify token
+        try:
+            payload = jwt.decode(
+                verify_request.token,
+                Config.SECRET_KEY,
+                algorithms=["HS256"]
+            )
+            
+            # Get database session
+            db = get_db_session()
+            
+            # Find user
+            user = db.query(User).filter(
+                User.id == payload["user_id"],
+                User.is_active == True
+            ).first()
+            
+            if not user:
+                return jsonify(ErrorResponse(
+                    success=False,
+                    message="User not found",
+                    error_code="USER_NOT_FOUND",
+                    trace_id=trace_id
+                ).dict()), 401
+            
+            # Prepare response
+            response = VerifyResponse(
+                success=True,
+                message="Token verified successfully",
+                data={
+                    "user_id": user.id,
+                    "email": user.email,
+                    "name": user.name,
+                    "role": user.role,
+                    "last_login": user.last_login.isoformat() if user.last_login else None
+                },
+                trace_id=trace_id
+            )
+            
+            return jsonify(response.dict()), 200
+            
+        except jwt.ExpiredSignatureError:
+            return jsonify(ErrorResponse(
+                success=False,
+                message="Token has expired",
+                error_code="TOKEN_EXPIRED",
+                trace_id=trace_id
+            ).dict()), 401
+            
+        except jwt.InvalidTokenError:
+            return jsonify(ErrorResponse(
+                success=False,
+                message="Invalid token",
+                error_code="INVALID_TOKEN",
+                trace_id=trace_id
+            ).dict()), 401
+        
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Token verification failed",
+            error_code="VERIFY_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
     """User logout endpoint."""

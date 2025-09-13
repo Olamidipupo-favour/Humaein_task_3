@@ -75,9 +75,10 @@ def check_eligibility():
             trace_id=trace_id
         ).dict()), 400
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -131,9 +132,10 @@ def draft_prior_auth():
             trace_id=trace_id
         ).dict()), 400
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -181,9 +183,10 @@ def suggest_coding():
             trace_id=trace_id
         ).dict()), 400
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -228,9 +231,65 @@ def scrub_claim():
             trace_id=trace_id
         ).dict()), 400
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/claims", methods=["GET"])
+@require_auth
+def get_claims(current_user):
+    """Get all claims."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        
+        # Import models
+        from app.rcm.models import Claim, Patient, Provider, Payer
+        
+        # Query claims with relationships
+        claims = db.query(Claim).join(Patient).join(Provider).join(Payer).all()
+        
+        # Format response
+        claims_data = []
+        for claim in claims:
+            claims_data.append({
+                "id": claim.id,
+                "claim_id": claim.claim_id,
+                "claim_date": claim.claim_date.isoformat(),
+                "service_date": claim.service_date.isoformat(),
+                "total_amount": float(claim.total_amount),
+                "status": claim.status.value,
+                "submission_date": claim.submission_date.isoformat() if claim.submission_date else None,
+                "patient": {
+                    "first_name": claim.patient.first_name,
+                    "last_name": claim.patient.last_name
+                },
+                "provider": {
+                    "name": claim.provider.name
+                },
+                "payer": {
+                    "name": claim.payer.name
+                }
+            })
+        
+        return jsonify({
+            "success": True,
+            "data": claims_data,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
+        return jsonify(ErrorResponse(
+            success=False,
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -275,9 +334,10 @@ def scrub_claim_route():
             trace_id=trace_id
         ).dict()), 400
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -291,6 +351,7 @@ def submit_claim():
     try:
         # Validate request
         request_data = request.get_json()
+        print(f"Received submit claim data: {request_data}")  # Debug logging
         submission_request = ClaimsSubmissionRequest(**request_data)
         
         # Get database session
@@ -322,9 +383,135 @@ def submit_claim():
             trace_id=trace_id
         ).dict()), 400
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/providers", methods=["GET"])
+@require_auth
+def get_providers(current_user):
+    """Get all providers."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        
+        # Import models
+        from app.rcm.models import Provider
+        
+        # Query providers
+        providers = db.query(Provider).all()
+        
+        # Format response
+        providers_data = []
+        for provider in providers:
+            providers_data.append({
+                "id": provider.id,
+                "name": provider.name,
+                "npi": provider.npi,
+                "specialty": provider.specialty,
+                "address": provider.address,
+                "phone": provider.phone,
+                "email": provider.email
+            })
+        
+        return jsonify({
+            "success": True,
+            "data": providers_data,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
+        return jsonify(ErrorResponse(
+            success=False,
+            message=f"Internal server error: {str(e)}",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/patients", methods=["GET"])
+@require_auth
+def get_patients(current_user):
+    """Get all patients."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        
+        # Import models
+        from app.rcm.models import Patient
+        
+        # Query patients
+        patients = db.query(Patient).all()
+        
+        # Format response
+        patients_data = []
+        for patient in patients:
+            patients_data.append({
+                "id": patient.id,
+                "first_name": patient.first_name,
+                "last_name": patient.last_name,
+                "insurance_id": patient.insurance_id,
+                "date_of_birth": patient.date_of_birth.isoformat(),
+                "gender": patient.gender,
+                "phone": patient.phone,
+                "email": patient.email
+            })
+        
+        return jsonify({
+            "success": True,
+            "data": patients_data,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
+        return jsonify(ErrorResponse(
+            success=False,
+            message=f"Internal server error: {str(e)}",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/claims/ids", methods=["GET"])
+@require_auth
+def get_claim_ids(current_user):
+    """Get list of available claim IDs for testing."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        
+        # Import models
+        from app.rcm.models import Claim
+        
+        # Query claim IDs
+        claims = db.query(Claim.claim_id, Claim.status).limit(10).all()
+        
+        claim_ids = [{"claim_id": claim.claim_id, "status": claim.status.value} for claim in claims]
+        
+        return jsonify({
+            "success": True,
+            "data": claim_ids,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
+        return jsonify(ErrorResponse(
+            success=False,
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -347,6 +534,7 @@ def track_claim(claim_id: str):
             return jsonify(ErrorResponse(
                 success=False,
                 message=result["error"],
+                error_code="CLAIM_NOT_FOUND",
                 trace_id=trace_id
             ).dict()), 404
         
@@ -357,9 +545,10 @@ def track_claim(claim_id: str):
         }), 200
         
     except Exception as e:
+        print(f"Error in track_claim: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -389,9 +578,10 @@ def get_remittance(claim_id: str):
         return jsonify(response.dict()), 200
         
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -445,9 +635,10 @@ def appeal_denial():
             trace_id=trace_id
         ).dict()), 400
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -474,9 +665,10 @@ def get_dashboard_stats(current_user):
         }), 200
         
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -503,9 +695,10 @@ def get_revenue_analytics(current_user):
         }), 200
         
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -532,38 +725,53 @@ def get_denial_analytics(current_user):
         }), 200
         
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
 
 
 @rcm_bp.route("/payers", methods=["GET"])
-def get_payers():
-    """Get a list of payers."""
+@require_auth
+def get_payers(current_user):
+    """Get a list of payers from database."""
     trace_id = generate_trace_id()
     
     try:
-        payers = [
-            { "id": "1", "name": "Blue Cross Blue Shield" },
-            { "id": "2", "name": "Aetna" },
-            { "id": "3", "name": "Cigna" },
-            { "id": "4", "name": "UnitedHealth" },
-            { "id": "5", "name": "Medicare" },
-        ]
+        from app.rcm.models import Payer
+        db = get_db_session()
+        
+        # Fetch real payers from database
+        payers = db.query(Payer).all()
+        
+        payers_data = []
+        for payer in payers:
+            payers_data.append({
+                "id": str(payer.id),
+                "name": payer.name,
+                "payer_id": payer.payer_id,
+                "payer_type": payer.payer_type,
+                "address": payer.address,
+                "phone": payer.phone,
+                "email": payer.email
+            })
+        
+        db.close()
         
         return jsonify({
             "success": True,
-            "data": payers,
+            "data": payers_data,
             "trace_id": trace_id
         }), 200
         
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -590,9 +798,10 @@ def get_recent_activity(current_user):
         }), 200
         
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -658,9 +867,10 @@ def get_kpis(current_user):
         }), 200
         
     except Exception as e:
+        print(f"Error in route: {str(e)}")  # Debug logging
         return jsonify(ErrorResponse(
             success=False,
-            message="Internal server error",
+            message=f"Internal server error: {str(e)}",
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
@@ -712,17 +922,41 @@ def seed_demo_data(current_user):
             db.add(provider)
             db.flush()  # Use flush instead of commit to get the ID
         
+        # Create multiple payers if none exist
         if not payer:
-            payer = Payer(
-                name="Demo Insurance",
-                payer_id="DEMO-INS-001",
-                payer_type="Private",
-                address="789 Insurance Plaza",
-                phone="+966-11-987-6543",
-                email="demo@insurance.com"
-            )
-            db.add(payer)
-            db.flush()  # Use flush instead of commit to get the ID
+            payers_data = [
+                {
+                    "name": "Demo Insurance",
+                    "payer_id": "DEMO-INS-001",
+                    "payer_type": "Private",
+                    "address": "789 Insurance Plaza",
+                    "phone": "+966-11-987-6543",
+                    "email": "demo@insurance.com"
+                },
+                {
+                    "name": "Saudi Health Insurance",
+                    "payer_id": "SHI-SA-002",
+                    "payer_type": "Government",
+                    "address": "Saudi Health Insurance, Riyadh",
+                    "phone": "+966-11-123-4567",
+                    "email": "claims@shi.gov.sa"
+                },
+                {
+                    "name": "GCC Medical Network",
+                    "payer_id": "GMN-GCC-003",
+                    "payer_type": "Private",
+                    "address": "GCC Medical Network, Dubai",
+                    "phone": "+971-4-123-4567",
+                    "email": "claims@gmn.ae"
+                }
+            ]
+            
+            for payer_data in payers_data:
+                new_payer = Payer(**payer_data)
+                db.add(new_payer)
+            
+            db.flush()  # Get all payer IDs
+            payer = db.query(Payer).first()  # Use the first payer for claims
         
         # Create claims for the last 6 months
         current_date = datetime.utcnow()
@@ -746,7 +980,7 @@ def seed_demo_data(current_user):
                 db.flush()  # Get the encounter ID
                 
                 claim = Claim(
-                    claim_id=f"DEMO-{claim_date.strftime('%Y%m%d')}-{random.randint(1000, 9999)}",
+                    claim_id=f"CLM-{claim_date.strftime('%Y%m%d')}-{random.randint(1000, 9999)}",
                     claim_date=claim_date,
                     service_date=claim_date,
                     total_amount=round(random.uniform(200.0, 1500.0), 2),

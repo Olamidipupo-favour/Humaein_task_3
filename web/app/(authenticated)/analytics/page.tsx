@@ -33,97 +33,65 @@ import { useAuth } from "../../contexts/AuthContext";
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("30d");
   const [loading, setLoading] = useState(true);
-  const [revenueData, setRevenueData] = useState([
-    { month: "Jan", revenue: 240000, claims: 120 },
-    { month: "Feb", revenue: 280000, claims: 135 },
-    { month: "Mar", revenue: 220000, claims: 110 },
-    { month: "Apr", revenue: 320000, claims: 145 },
-    { month: "May", revenue: 290000, claims: 130 },
-    { month: "Jun", revenue: 350000, claims: 140 },
-  ]);
-  const [denialReasons, setDenialReasons] = useState([
-    { name: "Prior Auth Required", value: 35, color: "#EF4444" },
-    { name: "Invalid Codes", value: 25, color: "#F59E0B" },
-    { name: "Missing Documentation", value: 20, color: "#8B5CF6" },
-    { name: "Eligibility Issues", value: 15, color: "#06B6D4" },
-    { name: "Other", value: 5, color: "#10B981" },
-  ]);
+  const [revenueData, setRevenueData] = useState([]);
+  const [denialReasons, setDenialReasons] = useState([]);
+  const [kpis, setKpis] = useState(null);
   const { token } = useAuth();
-
-  const kpiCards = [
-    {
-      title: "Revenue Growth",
-      value: "+12.5%",
-      change: "+$45K",
-      changeType: "positive",
-      icon: TrendingUp,
-      color: "bg-green-500",
-    },
-    {
-      title: "Clean Claim Rate",
-      value: "94.2%",
-      change: "+2.1%",
-      changeType: "positive",
-      icon: CheckCircle,
-      color: "bg-blue-500",
-    },
-    {
-      title: "Avg Days to Payment",
-      value: "28 days",
-      change: "-3 days",
-      changeType: "positive",
-      icon: Clock,
-      color: "bg-yellow-500",
-    },
-    {
-      title: "Denial Rate",
-      value: "5.8%",
-      change: "-1.2%",
-      changeType: "positive",
-      icon: AlertTriangle,
-      color: "bg-red-500",
-    },
-  ];
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       if (!token) return;
 
       try {
-        // Fetch revenue analytics
-        const revenueResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/revenue`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        const revenueData = await revenueResponse.json();
+        setLoading(true);
+        const [revenueRes, denialsRes, kpisRes] = await Promise.all([
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/revenue`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          ),
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/denials`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          ),
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/kpis`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          ),
+        ]);
+
+        if (!revenueRes.ok || !denialsRes.ok || !kpisRes.ok) {
+          throw new Error("Failed to fetch analytics data");
+        }
+
+        const revenueData = await revenueRes.json();
+        const denialsData = await denialsRes.json();
+        const kpisData = await kpisRes.json();
 
         if (revenueData.success) {
           setRevenueData(revenueData.data.revenue_trend);
         }
 
-        // Fetch denial analytics
-        const denialResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/denials`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        const denialData = await denialResponse.json();
+        if (denialsData.success) {
+          setDenialReasons(denialsData.data.denial_reasons);
+        }
 
-        if (denialData.success) {
-          setDenialReasons(denialData.data.denial_reasons);
+        if (kpisData.success) {
+          setKpis(kpisData.data);
         }
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
-        // Keep default data on error
       } finally {
         setLoading(false);
       }
@@ -131,6 +99,43 @@ export default function AnalyticsPage() {
 
     fetchAnalytics();
   }, [token]);
+
+  const kpiCards = kpis
+    ? [
+        {
+          title: "Revenue Growth",
+          value: kpis.revenue_growth.value,
+          change: kpis.revenue_growth.change,
+          changeType: kpis.revenue_growth.changeType,
+          icon: TrendingUp,
+          color: "bg-green-500",
+        },
+        {
+          title: "Clean Claim Rate",
+          value: kpis.clean_claim_rate.value,
+          change: kpis.clean_claim_rate.change,
+          changeType: kpis.clean_claim_rate.changeType,
+          icon: CheckCircle,
+          color: "bg-blue-500",
+        },
+        {
+          title: "Avg Days to Payment",
+          value: kpis.avg_days_to_payment.value,
+          change: kpis.avg_days_to_payment.change,
+          changeType: kpis.avg_days_to_payment.changeType,
+          icon: Clock,
+          color: "bg-yellow-500",
+        },
+        {
+          title: "Denial Rate",
+          value: kpis.denial_rate.value,
+          change: kpis.denial_rate.change,
+          changeType: kpis.denial_rate.changeType,
+          icon: AlertTriangle,
+          color: "bg-red-500",
+        },
+      ]
+    : [];
 
   if (loading) {
     return (
@@ -294,44 +299,52 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Performance Metrics */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Performance Metrics
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">94.2%</div>
-              <div className="text-sm text-gray-600">
-                First-Pass Success Rate
+      {kpis && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Performance Metrics
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {kpis.first_pass_success_rate.value}
+                </div>
+                <div className="text-sm text-gray-600">
+                  First-Pass Success Rate
+                </div>
+                <div className="text-xs text-green-600 mt-1">
+                  {kpis.first_pass_success_rate.change}
+                </div>
               </div>
-              <div className="text-xs text-green-600 mt-1">
-                +2.1% from last month
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {kpis.avg_days_to_payment_kpi.value}
+                </div>
+                <div className="text-sm text-gray-600">
+                  Average Days to Payment
+                </div>
+                <div className="text-xs text-green-600 mt-1">
+                  {kpis.avg_days_to_payment_kpi.change}
+                </div>
               </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">28</div>
-              <div className="text-sm text-gray-600">
-                Average Days to Payment
+              <div className="text-center">
+                <div className="text-3xl font-bold text-yellow-600 mb-2">
+                  {kpis.monthly_revenue.value}
+                </div>
+                <div className="text-sm text-gray-600">Monthly Revenue</div>
+                <div className="text-xs text-green-600 mt-1">
+                  {kpis.monthly_revenue.change}
+                </div>
               </div>
-              <div className="text-xs text-green-600 mt-1">
-                -3 days improvement
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-yellow-600 mb-2">
-                $2.5M
-              </div>
-              <div className="text-sm text-gray-600">Monthly Revenue</div>
-              <div className="text-xs text-green-600 mt-1">+12.5% growth</div>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

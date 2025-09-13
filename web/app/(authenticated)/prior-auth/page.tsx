@@ -200,17 +200,17 @@ export default function PriorAuthPage() {
                     <div className="flex justify-between">
                       <span>Authorization ID:</span>
                       <span className="font-medium">
-                        {result.data?.auth_id || "PA-20241201-1234"}
+                        {result.data.auth_id}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Status:</span>
-                      <span className="font-medium">Pending Review</span>
+                      <span className="font-medium">{result.data.status}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Estimated Review Time:</span>
                       <span className="font-medium">
-                        {result.data?.estimated_days || "3-5"} business days
+                        {result.data.estimated_days} business days
                       </span>
                     </div>
                   </div>
@@ -221,12 +221,7 @@ export default function PriorAuthPage() {
                     Required Documentation
                   </h4>
                   <ul className="text-sm text-blue-700 space-y-1">
-                    {[
-                      "Clinical notes supporting medical necessity",
-                      "Recent lab results",
-                      "Previous treatment history",
-                      "Provider certification",
-                    ].map((doc, index) => (
+                    {result.data.required_documentation.map((doc: string, index: number) => (
                       <li key={index} className="flex items-center">
                         <CheckCircle className="w-4 h-4 mr-2" />
                         {doc}

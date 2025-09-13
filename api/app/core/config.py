@@ -22,7 +22,7 @@ class Config:
     MODEL_NAME = os.getenv("MODEL_NAME", "gemini-1.5-pro")
     
     # CORS
-    ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS", "*").split(",")
+    ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
     
     # API settings
     API_VERSION = "v1"

@@ -224,7 +224,7 @@ export default function CodingPage() {
                         <div className="mt-1">
                           <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                             Confidence:{" "}
-                            {Math.round((code.confidence || 0.8) * 100)}%
+                            {Math.round(code.confidence * 100)}%
                           </span>
                         </div>
                       </div>
@@ -264,7 +264,7 @@ export default function CodingPage() {
                         <div className="mt-1">
                           <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                             Confidence:{" "}
-                            {Math.round((code.confidence || 0.8) * 100)}%
+                            {Math.round(code.confidence * 100)}%
                           </span>
                           {code.rvu && (
                             <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">

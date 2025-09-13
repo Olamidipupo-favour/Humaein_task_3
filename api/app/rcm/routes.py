@@ -538,3 +538,117 @@ def get_denial_analytics(current_user):
             error_code="INTERNAL_ERROR",
             trace_id=trace_id
         ).dict()), 500
+
+
+@rcm_bp.route("/payers", methods=["GET"])
+def get_payers():
+    """Get a list of payers."""
+    trace_id = generate_trace_id()
+    
+    try:
+        payers = [
+            { "id": "1", "name": "Blue Cross Blue Shield" },
+            { "id": "2", "name": "Aetna" },
+            { "id": "3", "name": "Cigna" },
+            { "id": "4", "name": "UnitedHealth" },
+            { "id": "5", "name": "Medicare" },
+        ]
+        
+        return jsonify({
+            "success": True,
+            "data": payers,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/recent-activity", methods=["GET"])
+@require_auth
+def get_recent_activity(current_user):
+    """Get recent activity."""
+    trace_id = generate_trace_id()
+    
+    try:
+        # Get database session
+        db = get_db_session()
+        rcm_service = RCMService(db)
+        
+        # Get recent activity from database
+        activities = rcm_service.get_recent_activity(user_id=current_user.id)
+        
+        return jsonify({
+            "success": True,
+            "data": activities,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500
+
+
+@rcm_bp.route("/analytics/kpis", methods=["GET"])
+def get_kpis():
+    """Get a list of KPIs."""
+    trace_id = generate_trace_id()
+    
+    try:
+        kpis = {
+            "revenue_growth": {
+                "value": "+12.5%",
+                "change": "+$45K",
+                "changeType": "positive",
+            },
+            "clean_claim_rate": {
+                "value": "94.2%",
+                "change": "+2.1%",
+                "changeType": "positive",
+            },
+            "avg_days_to_payment": {
+                "value": "28 days",
+                "change": "-3 days",
+                "changeType": "positive",
+            },
+            "denial_rate": {
+                "value": "5.8%",
+                "change": "-1.2%",
+                "changeType": "positive",
+            },
+            "first_pass_success_rate": {
+                "value": "94.2%",
+                "change": "+2.1% from last month",
+            },
+            "avg_days_to_payment_kpi": {
+                "value": "28",
+                "change": "-3 days improvement",
+            },
+            "monthly_revenue": {
+                "value": "$2.5M",
+                "change": "+12.5% growth",
+            },
+        }
+        
+        return jsonify({
+            "success": True,
+            "data": kpis,
+            "trace_id": trace_id
+        }), 200
+        
+    except Exception as e:
+        return jsonify(ErrorResponse(
+            success=False,
+            message="Internal server error",
+            error_code="INTERNAL_ERROR",
+            trace_id=trace_id
+        ).dict()), 500

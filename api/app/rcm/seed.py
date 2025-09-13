@@ -206,7 +206,9 @@ class RCMSeeder:
         return patients
 
     def seed_encounters(
-        self, providers: List[Provider], patients: List[Patient]
+        self,
+        providers: List[Provider],
+        patients: List[Patient],
     ) -> List[Encounter]:
         """Seed encounter data."""
         encounter_types = ["Inpatient", "Outpatient", "Emergency", "Consultation"]
@@ -231,7 +233,9 @@ class RCMSeeder:
         return encounters
 
     def seed_claims(
-        self, encounters: List[Encounter], payers: List[Payer]
+        self,
+        encounters: List[Encounter],
+        payers: List[Payer],
     ) -> List[Claim]:
         """Seed claim data."""
         claims = []
@@ -279,7 +283,9 @@ class RCMSeeder:
         return claim_lines
 
     def seed_remittances(
-        self, claims: List[Claim], payers: List[Payer]
+        self,
+        claims: List[Claim],
+        payers: List[Payer],
     ) -> List[Remittance]:
         """Seed remittance data."""
         remittances = []
@@ -352,8 +358,24 @@ class RCMSeeder:
         self.db.commit()
         return users
 
+    def clear_data(self):
+        """Clear all data from the tables."""
+        print("Clearing existing data...")
+        self.db.query(ClaimLine).delete()
+        self.db.query(Remittance).delete()
+        self.db.query(Denial).delete()
+        self.db.query(Claim).delete()
+        self.db.query(Encounter).delete()
+        self.db.query(Patient).delete()
+        self.db.query(Provider).delete()
+        self.db.query(Payer).delete()
+        self.db.query(User).delete()
+        self.db.commit()
+
     def seed_all(self) -> Dict[str, Any]:
         """Seed all data."""
+        self.clear_data()
+        
         print("Seeding providers...")
         providers = self.seed_providers()
 

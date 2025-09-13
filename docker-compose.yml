@@ -11,10 +11,10 @@ services:
       - DATABASE_URL=postgresql+psycopg://humaein:Postgres123!!@ep-lively-sun-a5i0suhp-pooler.us-east-2.aws.neon.tech:5432/rcm
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - APP_ENV=production
-      - ALLOW_ORIGINS=http://localhost:3001,http://web:3001,http://145.223.88.159:3001
+      - ALLOW_ORIGINS=ttp://localhost:3000,http://localhost:3001,http://web:3001,http://145.223.88.159:3001,http://145.223.88.159:3002
       - MODEL_NAME=gemini-1.5-pro
     ports:
-      - "8000:8000"
+      - "8001:8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -30,14 +30,14 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: http://145.223.88.159:8000
+        NEXT_PUBLIC_API_BASE_URL: http://145.223.88.159:8001
     container_name: rcm-gcc-web
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://145.223.88.159:8000
+      - NEXT_PUBLIC_API_BASE_URL=http://145.223.88.159:8001
       - DEMO_LOGIN=true
       - PORT=3001
     ports:
-      - "3001:3001"
+      - "3002:3001"
     depends_on:
       api:
         condition: service_healthy

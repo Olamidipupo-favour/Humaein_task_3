@@ -26,126 +26,152 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts";
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    totalClaims: 0,
-    pendingClaims: 0,
-    paidClaims: 0,
-    deniedClaims: 0,
-    totalRevenue: 0,
-    avgDaysToPayment: 0,
-    denialRate: 0,
-    cleanClaimRate: 0,
-  });
-
+  const [stats, setStats] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [pieData, setPieData] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       if (!token) return;
 
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/dashboard/stats`,
-          {
+        setLoading(true);
+        const [statsRes, revenueRes, denialsRes, recentActivityRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/dashboard/stats`, {
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
             },
-          },
-        );
-        const data = await response.json();
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/revenue`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/analytics/denials`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/recent-activity`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        ]);
 
-        if (data.success) {
-          setStats({
-            totalClaims: data.data.total_claims,
-            pendingClaims: data.data.pending_claims,
-            paidClaims: data.data.paid_claims,
-            deniedClaims: data.data.denied_claims,
-            totalRevenue: data.data.total_revenue,
-            avgDaysToPayment: data.data.avg_days_to_payment,
-            denialRate: data.data.denial_rate,
-            cleanClaimRate: data.data.clean_claim_rate,
-          });
+        if (!statsRes.ok || !revenueRes.ok || !denialsRes.ok || !recentActivityRes.ok) {
+          throw new Error("Failed to fetch dashboard data");
+        }
+
+        const statsData = await statsRes.json();
+        const revenueData = await revenueRes.json();
+        const denialsData = await denialsRes.json();
+        const recentActivityData = await recentActivityRes.json();
+
+        if (statsData.success) {
+          setStats(statsData.data);
+        }
+
+        if (revenueData.success) {
+          console.log('Revenue data received:', revenueData.data);
+          setChartData(revenueData.data.revenue_trend);
+        }
+
+        if (denialsData.success) {
+          const pieData = [
+            {
+              name: "Paid",
+              value: statsData.data.paid_claims,
+              color: "#10B981",
+            },
+            {
+              name: "Pending",
+              value: statsData.data.pending_claims,
+              color: "#F59E0B",
+            },
+            {
+              name: "Denied",
+              value: statsData.data.denied_claims,
+              color: "#EF4444",
+            },
+          ];
+          setPieData(pieData);
+        }
+
+        if (recentActivityData.success) {
+          setRecentActivity(recentActivityData.data);
         }
       } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-        // Fallback to demo data
-        setStats({
-          totalClaims: 1250,
-          pendingClaims: 45,
-          paidClaims: 1100,
-          deniedClaims: 105,
-          totalRevenue: 2500000,
-          avgDaysToPayment: 28,
-          denialRate: 8.4,
-          cleanClaimRate: 91.6,
-        });
+        console.error("Failed to fetch dashboard data:", error);
+        setError("Failed to fetch dashboard data. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchDashboardData();
   }, [token]);
 
-  const chartData = [
-    { month: "Jan", claims: 120, denials: 10 },
-    { month: "Feb", claims: 135, denials: 12 },
-    { month: "Mar", claims: 110, denials: 8 },
-    { month: "Apr", claims: 145, denials: 15 },
-    { month: "May", claims: 130, denials: 11 },
-    { month: "Jun", claims: 140, denials: 13 },
-  ];
-
-  const pieData = [
-    { name: "Paid", value: 88, color: "#10B981" },
-    { name: "Pending", value: 3.6, color: "#F59E0B" },
-    { name: "Denied", value: 8.4, color: "#EF4444" },
-  ];
-
-  const statCards = [
-    {
-      title: "Total Claims",
-      value: stats.totalClaims.toLocaleString(),
-      change: "+12%",
-      changeType: "positive",
-      icon: FileText,
-      color: "bg-blue-500",
-    },
-    {
-      title: "Total Revenue",
-      value: `$${(stats.totalRevenue / 1000000).toFixed(1)}M`,
-      change: "+8.5%",
-      changeType: "positive",
-      icon: DollarSign,
-      color: "bg-green-500",
-    },
-    {
-      title: "Pending Claims",
-      value: stats.pendingClaims,
-      change: "-5%",
-      changeType: "negative",
-      icon: Clock,
-      color: "bg-yellow-500",
-    },
-    {
-      title: "Denial Rate",
-      value: `${stats.denialRate}%`,
-      change: "-2.1%",
-      changeType: "negative",
-      icon: AlertTriangle,
-      color: "bg-red-500",
-    },
-  ];
+  const statCards = stats
+    ? [
+        {
+          title: "Total Claims",
+          value: stats.total_claims.toLocaleString(),
+          change: "+12%", // Note: change data is not in the API
+          changeType: "positive",
+          icon: FileText,
+          color: "bg-blue-500",
+        },
+        {
+          title: "Total Revenue",
+          value: `$${(stats.total_revenue / 1000000).toFixed(1)}M`,
+          change: "+8.5%",
+          changeType: "positive",
+          icon: DollarSign,
+          color: "bg-green-500",
+        },
+        {
+          title: "Pending Claims",
+          value: stats.pending_claims,
+          change: "-5%",
+          changeType: "negative",
+          icon: Clock,
+          color: "bg-yellow-500",
+        },
+        {
+          title: "Denial Rate",
+          value: `${stats.denial_rate}%`,
+          change: "-2.1%",
+          changeType: "negative",
+          icon: AlertTriangle,
+          color: "bg-red-500",
+        },
+      ]
+    : [];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-red-500 text-center">
+          <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
@@ -218,24 +244,36 @@ export default function DashboardPage() {
               Claims Trend
             </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="claims"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="denials"
-                  stroke="#EF4444"
-                  strokeWidth={2}
-                />
-              </LineChart>
+              {chartData && chartData.length > 0 ? (
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="claims"
+                    stroke="#3B82F6"
+                    strokeWidth={2}
+                    name="Claims Count"
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    name="Revenue ($)"
+                  />
+                </LineChart>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  No data available for claims trend
+                </div>
+              )}
             </ResponsiveContainer>
           </div>
         </motion.div>
@@ -294,38 +332,7 @@ export default function DashboardPage() {
             Recent Activity
           </h3>
           <div className="space-y-4">
-            {[
-              {
-                action: "Claim submitted",
-                details: "CLM-20241201-1234",
-                time: "2 minutes ago",
-                status: "success",
-              },
-              {
-                action: "Eligibility verified",
-                details: "PAT-SA-001",
-                time: "5 minutes ago",
-                status: "success",
-              },
-              {
-                action: "Prior auth approved",
-                details: "PA-20241201-5678",
-                time: "1 hour ago",
-                status: "success",
-              },
-              {
-                action: "Claim denied",
-                details: "CLM-20241130-9876",
-                time: "2 hours ago",
-                status: "error",
-              },
-              {
-                action: "Payment received",
-                details: "$1,250.00",
-                time: "3 hours ago",
-                status: "success",
-              },
-            ].map((activity, index) => (
+            {recentActivity.map((activity, index) => (
               <div key={index} className="flex items-center space-x-3">
                 <div
                   className={`p-2 rounded-full ${

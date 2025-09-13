@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   CheckCircle,
   XCircle,
@@ -11,9 +12,9 @@ import {
   Calendar,
   CreditCard,
 } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
 
 export default function EligibilityPage() {
+  const { token } = useAuth();
   const [formData, setFormData] = useState({
     patientId: "",
     payerId: "",
@@ -22,7 +23,29 @@ export default function EligibilityPage() {
   });
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const { token } = useAuth();
+  const [payers, setPayers] = useState([]);
+
+  useEffect(() => {
+    const fetchPayers = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/payers`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (data.success) {
+          setPayers(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch payers:", error);
+      }
+    };
+
+    if (token) {
+      fetchPayers();
+    }
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,11 +136,11 @@ export default function EligibilityPage() {
                   required
                 >
                   <option value="">Select insurance provider</option>
-                  <option value="1">Blue Cross Blue Shield</option>
-                  <option value="2">Aetna</option>
-                  <option value="3">Cigna</option>
-                  <option value="4">UnitedHealth</option>
-                  <option value="5">Medicare</option>
+                  {payers.map((payer: any) => (
+                    <option key={payer.id} value={payer.id}>
+                      {payer.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -202,24 +225,24 @@ export default function EligibilityPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Coverage Status:</span>
-                      <span className="font-medium">Active</span>
+                      <span className="font-medium">{result.data.coverage_status}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Copay:</span>
                       <span className="font-medium">
-                        ${result.data?.copay || "25"}
+                        ${result.data.copay}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Deductible Remaining:</span>
                       <span className="font-medium">
-                        ${result.data?.deductible_remaining || "1,200"}
+                        ${result.data.deductible_remaining}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Out-of-Pocket Max:</span>
                       <span className="font-medium">
-                        ${result.data?.out_of_pocket_max || "5,000"}
+                        ${result.data.out_of_pocket_max}
                       </span>
                     </div>
                   </div>

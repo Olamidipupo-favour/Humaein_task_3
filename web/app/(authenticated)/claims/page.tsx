@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -30,7 +30,29 @@ export default function ClaimsPage() {
   const [loading, setLoading] = useState(false);
   const [trackingClaimId, setTrackingClaimId] = useState("");
   const [trackingResult, setTrackingResult] = useState<any>(null);
-  const { token } = useAuth();
+  const [payers, setPayers] = useState([]);
+
+  useEffect(() => {
+    const fetchPayers = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/rcm/payers`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (data.success) {
+          setPayers(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch payers:", error);
+      }
+    };
+
+    if (token) {
+      fetchPayers();
+    }
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,11 +302,11 @@ export default function ClaimsPage() {
                       required
                     >
                       <option value="">Select payer</option>
-                      <option value="1">Blue Cross Blue Shield</option>
-                      <option value="2">Aetna</option>
-                      <option value="3">Cigna</option>
-                      <option value="4">UnitedHealth</option>
-                      <option value="5">Medicare</option>
+                      {payers.map((payer: any) => (
+                        <option key={payer.id} value={payer.id}>
+                          {payer.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -405,11 +427,11 @@ export default function ClaimsPage() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span>Clean Claim Rate:</span>
-                          <span className="font-medium">95.2%</span>
+                          <span className="font-medium">{result.data.clean_claim_rate}%</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Issues Found:</span>
-                          <span className="font-medium">2</span>
+                          <span className="font-medium">{result.data.issues.length}</span>
                         </div>
                       </div>
                     </div>
@@ -419,11 +441,7 @@ export default function ClaimsPage() {
                         Recommendations
                       </h4>
                       <ul className="text-sm text-blue-700 space-y-1">
-                        {[
-                          "Verify patient eligibility before submission",
-                          "Ensure all required documentation is attached",
-                          "Double-check diagnosis and procedure codes",
-                        ].map((rec, index) => (
+                        {result.data.recommendations.map((rec: string, index: number) => (
                           <li key={index} className="flex items-center">
                             <CheckCircle className="w-4 h-4 mr-2" />
                             {rec}
@@ -448,11 +466,11 @@ export default function ClaimsPage() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span>Claim ID:</span>
-                          <span className="font-medium">CLM-20241201-1234</span>
+                          <span className="font-medium">{result.data.claim_id}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Status:</span>
-                          <span className="font-medium">Submitted</span>
+                          <span className="font-medium">{result.data.status}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Expected Response:</span>

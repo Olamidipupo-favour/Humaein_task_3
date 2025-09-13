@@ -176,11 +176,7 @@ export default function HomePage() {
               </button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-500">
-                Demo Credentials: admin@demo.com / admin123
-              </p>
-            </div>
+            
           </div>
 
           <div className="mt-8 text-center">

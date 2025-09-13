@@ -28,6 +28,19 @@ class LoginResponse(BaseModel):
     trace_id: str = Field(..., description="Request trace ID")
 
 
+class VerifyRequest(BaseModel):
+    """Token verification request schema."""
+    token: str = Field(..., description="JWT token to verify")
+
+
+class VerifyResponse(BaseModel):
+    """Token verification response schema."""
+    success: bool = Field(..., description="Verification success status")
+    message: str = Field(..., description="Response message")
+    data: Dict[str, Any] = Field(default_factory=dict, description="User data")
+    trace_id: str = Field(..., description="Request trace ID")
+
+
 class ErrorResponse(BaseModel):
     """Error response schema."""
     success: bool = Field(False, description="Success status")
@@ -41,10 +54,11 @@ def generate_trace_id() -> str:
     return str(uuid.uuid4())
 
 
-def generate_token(user_id: int) -> str:
-    """Generate simple token for demo purposes."""
-    return f"demo_token_{user_id}_{datetime.utcnow().timestamp()}"
 
+
+
+import jwt
+from app.core.config import Config
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
@@ -81,7 +95,14 @@ def login():
         db.commit()
         
         # Generate token
-        token = generate_token(user.id)
+        token = jwt.encode(
+            {
+                "user_id": user.id,
+                "exp": datetime.utcnow() + timedelta(hours=24),
+            },
+            Config.SECRET_KEY,
+            algorithm="HS256",
+        )
         
         # Prepare response
         response = LoginResponse(
@@ -109,64 +130,7 @@ def login():
         ).dict()), 500
 
 
-@auth_bp.route("/verify", methods=["POST"])
-def verify_token():
-    """Verify authentication token."""
-    trace_id = generate_trace_id()
-    
-    try:
-        request_data = request.get_json()
-        token = request_data.get("token")
-        
-        if not token:
-            return jsonify(ErrorResponse(
-                success=False,
-                message="Token required",
-                error_code="MISSING_TOKEN",
-                trace_id=trace_id
-            ).dict()), 400
-        
-        # For demo purposes, extract user ID from token
-        # In production, you would verify JWT token here
-        if token.startswith("demo_token_"):
-            parts = token.split("_")
-            if len(parts) >= 3:
-                user_id = int(parts[2])
-                
-                # Get database session
-                db = get_db_session()
-                user = db.query(User).filter(
-                    User.id == user_id,
-                    User.is_active == True
-                ).first()
-                
-                if user:
-                    return jsonify({
-                        "success": True,
-                        "message": "Token valid",
-                        "data": {
-                            "user_id": user.id,
-                            "email": user.email,
-                            "name": user.name,
-                            "role": user.role
-                        },
-                        "trace_id": trace_id
-                    }), 200
-        
-        return jsonify(ErrorResponse(
-            success=False,
-            message="Invalid token",
-            error_code="INVALID_TOKEN",
-            trace_id=trace_id
-        ).dict()), 401
-        
-    except Exception as e:
-        return jsonify(ErrorResponse(
-            success=False,
-            message="Token verification failed",
-            error_code="VERIFICATION_ERROR",
-            trace_id=trace_id
-        ).dict()), 500
+
 
 
 @auth_bp.route("/logout", methods=["POST"])

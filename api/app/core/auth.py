@@ -9,6 +9,9 @@ from app.core.db import get_db_session
 from app.rcm.models import User
 
 
+import jwt
+from app.core.config import Config
+
 def get_current_user() -> Optional[User]:
     """Get current user from request token."""
     try:
@@ -19,23 +22,24 @@ def get_current_user() -> Optional[User]:
         
         token = auth_header.split(' ')[1]
         
-        # For demo purposes, extract user ID from token
-        if token.startswith("demo_token_"):
-            parts = token.split("_")
-            if len(parts) >= 3:
-                user_id = int(parts[2])
-                
-                # Get database session
-                db = get_db_session()
-                user = db.query(User).filter(
-                    User.id == user_id,
-                    User.is_active == True
-                ).first()
-                
-                return user
+        # Decode JWT
+        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("user_id")
+
+        if not user_id:
+            return None
+
+        # Get database session
+        db = get_db_session()
+        user = db.query(User).filter(
+            User.id == user_id,
+            User.is_active == True
+        ).first()
         
+        return user
+        
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
-        
     except Exception:
         return None
 
